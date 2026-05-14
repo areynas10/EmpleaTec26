@@ -12,7 +12,6 @@
             --tec-white: #FFFFFF;
             --tec-gray: #F0F0F0;
             --tec-dark: #333333;
-            --tec-green: #00853f; /* Verde Tecmilenio */
             --tec-orange: #FF8C00;
         }
 
@@ -25,32 +24,22 @@
             overflow-x: hidden;
         }
 
-        /* Encabezado */
+        /* Encabezado sin logos, solo texto centrado */
         header {
             background-color: var(--tec-blue);
             color: var(--tec-white);
             display: flex;
-            justify-content: space-between;
+            justify-content: center; /* Centrado */
             align-items: center;
-            padding: 10px 30px;
+            padding: 20px 30px;
             box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-        }
-
-        .header-logo {
-            height: 60px;
-            width: 60px;
-            object-fit: cover;
-            border-radius: 50%;
-            background-color: white;
-            border: 2px solid white;
         }
 
         header h1 {
             margin: 0;
-            font-size: 2rem;
-            letter-spacing: 2px;
+            font-size: 2.2rem;
+            letter-spacing: 3px;
             font-weight: bold;
-            text-align: center;
         }
 
         /* Pantallas */
@@ -136,7 +125,8 @@
             border: 4px solid var(--tec-blue);
             border-radius: 15px;
             overflow: hidden;
-            display: none; /* Se activa por JS según el juego */
+            display: none; 
+            box-sizing: border-box;
         }
         .active-game-area { display: block; }
 
@@ -163,7 +153,6 @@
             gap: 10px;
             padding: 10px;
             height: 100%;
-            box-sizing: border-box;
         }
         .memory-card {
             background-color: var(--tec-blue);
@@ -184,18 +173,31 @@
             cursor: default;
         }
 
-        /* JUEGO 3: Color Diferente */
-        .color-grid {
-            display: grid;
-            gap: 5px;
-            padding: 10px;
-            width: 100%;
-            height: 100%;
-            box-sizing: border-box;
+        /* JUEGO 3: Código Crítico (Nuevo diseño tipo terminal) */
+        #game-area-3 {
+            background-color: #1e1e1e; /* Fondo oscuro tipo terminal */
+            padding: 15px;
+            display: flex;
+            flex-wrap: wrap;
+            align-content: flex-start;
+            gap: 8px;
+            overflow-y: hidden;
         }
-        .color-box {
-            border-radius: 8px;
+        .code-word {
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 1rem;
+            font-weight: bold;
+            color: #d13a3a; /* Rojo para los errores */
             cursor: pointer;
+            padding: 4px 8px;
+            border-radius: 4px;
+            user-select: none;
+        }
+        .code-word:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+        .target-word {
+            color: #00ff00; /* Verde para la solución */
         }
 
         /* Modal Pop-up */
@@ -228,9 +230,7 @@
 <body>
 
     <header>
-        <img src="tec logo.jpg" alt="Logo Tec" class="header-logo">
         <h1>EMPLEATEC</h1>
-        <img src="Tecmilenio_Logo.jpg" alt="Logo Tecmilenio" class="header-logo">
     </header>
 
     <div id="screen-menu" class="screen active-screen">
@@ -260,7 +260,7 @@
         
         <div id="game-area-2" class="game-area memory-grid"></div>
 
-        <div id="game-area-3" class="game-area color-grid"></div>
+        <div id="game-area-3" class="game-area"></div>
     </div>
 
     <div id="result-modal" class="modal-overlay">
@@ -302,11 +302,11 @@
             },
             3: {
                 title: "Misión: Código Crítico",
-                rules: "Encuentra y haz clic en el cuadro que tiene un color ligeramente distinto. La cuadrícula crecerá en cada acierto.",
+                rules: "Escanea la terminal de datos. Haz clic rápidamente en la palabra 'SOLUCIÓN' oculta entre el código basura. Los clics equivocados te restarán tiempo.",
                 eval: (niveles) => {
-                    if (niveles >= 12) return { badge: "Detective de Soluciones", desc: "Resolución de problemas implacable." };
-                    if (niveles >= 6) return { badge: "Arquitecto de Soluciones", desc: "Pensamiento crítico y analítico." };
-                    return { badge: "Generador de Resultados", desc: "Fuerte orientación a resultados rápidos." };
+                    if (niveles >= 10) return { badge: "Detective de Soluciones", desc: "Resolución de problemas impecable. Encuentras lo oculto." };
+                    if (niveles >= 5) return { badge: "Arquitecto de Soluciones", desc: "Pensamiento crítico y capacidad de análisis bajo presión." };
+                    return { badge: "Generador de Resultados", desc: "Fuerte orientación a resultados rápidos y persistencia." };
                 }
             }
         };
@@ -340,7 +340,8 @@
             
             // Mostrar solo el área del juego actual
             document.querySelectorAll('.game-area').forEach(el => el.classList.remove('active-game-area'));
-            document.getElementById(`game-area-${currentGame}`).classList.add('active-game-area');
+            const currentArea = document.getElementById(`game-area-${currentGame}`);
+            currentArea.classList.add('active-game-area');
 
             // Iniciar lógica específica
             if (currentGame === 1) initGame1();
@@ -357,7 +358,7 @@
 
         function updateHeader() {
             document.getElementById('timer').innerText = `Tiempo: ${timeLeft}s`;
-            let displayScore = currentGame === 2 ? `Pares: ${score}` : (currentGame === 3 ? `Nivel: ${score}` : `Puntos: ${score}`);
+            let displayScore = currentGame === 2 ? `Pares: ${score}` : (currentGame === 3 ? `Aciertos: ${score}` : `Puntos: ${score}`);
             document.getElementById('score-display').innerText = displayScore;
         }
 
@@ -367,30 +368,21 @@
             area.innerHTML = '';
             gameLogicInterval = setInterval(() => {
                 if (timeLeft > 0) spawnItem(area);
-            }, 600); // Aparece un objeto cada 0.6s
+            }, 600);
         }
 
         function spawnItem(area) {
             const item = document.createElement('div');
-            const isGood = Math.random() > 0.3; // 70% buenos, 30% malos
-            
+            const isGood = Math.random() > 0.3;
             item.classList.add('falling-item');
             item.classList.add(isGood ? 'good-item' : 'bad-item');
-            
-            // Posición horizontal aleatoria
             item.style.left = Math.floor(Math.random() * (area.clientWidth - 40)) + 'px';
-            
-            // Velocidad aleatoria
-            const duration = Math.random() * 2 + 1.5; 
-            item.style.animationDuration = `${duration}s`;
-
+            item.style.animationDuration = `${Math.random() * 2 + 1.5}s`;
             item.onclick = () => {
-                score += isGood ? 20 : -10; // Puntuación
+                score += isGood ? 20 : -10; 
                 updateHeader();
                 item.remove();
             };
-
-            // Eliminar al terminar animación
             item.addEventListener('animationend', () => item.remove());
             area.appendChild(item);
         }
@@ -401,17 +393,13 @@
             const area = document.getElementById('game-area-2');
             area.innerHTML = '';
             flippedCards = [];
-            
             const emojis = ['💡', '🤝', '🚀', '🎯', '📈', '🧠'];
-            let deck = [...emojis, ...emojis];
-            deck.sort(() => 0.5 - Math.random()); // Mezclar
-
+            let deck = [...emojis, ...emojis].sort(() => 0.5 - Math.random());
             deck.forEach(symbol => {
                 const card = document.createElement('div');
                 card.classList.add('memory-card');
                 card.dataset.symbol = symbol;
                 card.innerText = symbol;
-                
                 card.onclick = () => handleCardClick(card);
                 area.appendChild(card);
             });
@@ -421,19 +409,16 @@
             if (flippedCards.length < 2 && !card.classList.contains('flipped')) {
                 card.classList.add('flipped');
                 flippedCards.push(card);
-
-                if (flippedCards.length === 2) {
-                    setTimeout(checkMatch, 500);
-                }
+                if (flippedCards.length === 2) setTimeout(checkMatch, 500);
             }
         }
 
         function checkMatch() {
             const [card1, card2] = flippedCards;
             if (card1.dataset.symbol === card2.dataset.symbol) {
-                score++; // Un par encontrado
+                score++; 
                 updateHeader();
-                if (score === 6) endGame(); // Ganó rápido
+                if (score === 6) endGame(); 
             } else {
                 card1.classList.remove('flipped');
                 card2.classList.remove('flipped');
@@ -441,54 +426,49 @@
             flippedCards = [];
         }
 
-        // --- LÓGICA JUEGO 3: Color Diferente ---
-        let gridSize = 2;
+        // --- LÓGICA JUEGO 3: Nuevo Código Crítico (Escáner de Datos) ---
         function initGame3() {
-            gridSize = 2; // Empieza 2x2
-            renderColorGrid();
+            renderDataGrid();
         }
 
-        function renderColorGrid() {
+        function renderDataGrid() {
             const area = document.getElementById('game-area-3');
             area.innerHTML = '';
             
-            area.style.gridTemplateColumns = `repeat(${gridSize}, 1fr)`;
-            area.style.gridTemplateRows = `repeat(${gridSize}, 1fr)`;
+            // Palabras basura
+            const junkWords = ["[ERROR]", "NULL_PTR", "404_NOT_FOUND", "SYS_FAIL", "BAD_GATEWAY", "DENIED", "VOID", "EXCEPTION"];
+            
+            // Cantidad de palabras en pantalla (aumenta dificultad con cada acierto)
+            const totalWords = 35 + (score * 5); 
+            const targetIndex = Math.floor(Math.random() * totalWords);
 
-            // Generar color base aleatorio
-            const r = Math.floor(Math.random() * 200);
-            const g = Math.floor(Math.random() * 200);
-            const b = Math.floor(Math.random() * 200);
-            const baseColor = `rgb(${r}, ${g}, ${b})`;
-
-            // Dificultad (qué tan diferente es el color)
-            const offset = Math.max(10, 50 - (score * 3)); 
-            const diffColor = `rgb(${r + offset}, ${g + offset}, ${b + offset})`;
-
-            const totalSquares = gridSize * gridSize;
-            const diffIndex = Math.floor(Math.random() * totalSquares);
-
-            for (let i = 0; i < totalSquares; i++) {
-                const box = document.createElement('div');
-                box.classList.add('color-box');
+            for (let i = 0; i < totalWords; i++) {
+                const wordSpan = document.createElement('span');
+                wordSpan.classList.add('code-word');
                 
-                if (i === diffIndex) {
-                    box.style.backgroundColor = diffColor;
-                    box.onclick = () => {
+                if (i === targetIndex) {
+                    // Palabra correcta
+                    wordSpan.innerText = "[SOLUCIÓN]";
+                    wordSpan.classList.add('target-word');
+                    wordSpan.onclick = () => {
                         score++;
-                        if(gridSize < 8) gridSize++; // Aumentar dificultad
                         updateHeader();
-                        renderColorGrid();
+                        renderDataGrid(); // Refrescar pantalla
                     };
                 } else {
-                    box.style.backgroundColor = baseColor;
-                    box.onclick = () => {
-                        // Penalización por fallo
-                        timeLeft = Math.max(0, timeLeft - 2); 
+                    // Palabra incorrecta
+                    wordSpan.innerText = junkWords[Math.floor(Math.random() * junkWords.length)];
+                    wordSpan.onclick = () => {
+                        // Penalización de tiempo si hace clic en un error
+                        timeLeft = Math.max(0, timeLeft - 2);
                         updateHeader();
+                        
+                        // Efecto visual de error
+                        area.style.backgroundColor = "#4a0000";
+                        setTimeout(() => { area.style.backgroundColor = "#1e1e1e"; }, 200);
                     };
                 }
-                area.appendChild(box);
+                area.appendChild(wordSpan);
             }
         }
 
@@ -496,14 +476,9 @@
         function endGame() {
             clearInterval(timerInterval);
             clearInterval(gameLogicInterval);
-            
-            // Evaluar resultado según el juego
             const result = gameData[currentGame].eval(score);
-            
-            // Mostrar texto limpio en modal
             document.getElementById('result-badge').innerText = result.badge;
             document.getElementById('result-desc').innerText = result.desc;
-            
             document.getElementById('result-modal').style.display = 'flex';
         }
     </script>
