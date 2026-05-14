@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Minijuegos EmpleaTec</title>
+    <style>
+        /* Paleta de colores institucional Tec de Monterrey */
+        :root {
+            --tec-blue: #0033A0; /* Azul Tec */
+            --tec-light-blue: #0055D4;
+            --tec-white: #FFFFFF;
+            --tec-gray: #F0F0F0;
+            --tec-dark: #333333;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: var(--tec-gray);
+            color: var(--tec-dark);
+            overflow-x: hidden;
+        }
+
+        /* Encabezado */
+        header {
+            background-color: var(--tec-blue);
+            color: var(--tec-white);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 30px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        .header-logo {
+            height: 60px;
+            width: 60px;
+            object-fit: contain;
+            background-color: white; /* Para que resalte el logo azul si es transparente */
+            border-radius: 50%;
+        }
+
+        header h1 {
+            margin: 0;
+            font-size: 2rem;
+            letter-spacing: 2px;
+            font-weight: bold;
+        }
+
+        /* Contenedores de Pantallas */
+        .screen {
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: calc(100vh - 90px);
+            padding: 20px;
+            text-align: center;
+        }
+
+        .active-screen {
+            display: flex;
+        }
+
+        /* Menú Principal */
+        .menu-container {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+            justify-content: center;
+            max-width: 900px;
+        }
+
+        .game-btn {
+            background-color: var(--tec-white);
+            color: var(--tec-blue);
+            border: 3px solid var(--tec-blue);
+            border-radius: 15px;
+            padding: 30px 20px;
+            font-size: 1.2rem;
+            font-weight: bold;
+            cursor: pointer;
+            width: 250px;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+
+        .game-btn:hover {
+            background-color: var(--tec-blue);
+            color: var(--tec-white);
+            transform: translateY(-5px);
+        }
+
+        /* Pantalla de Reglas */
+        .rules-box {
+            background: var(--tec-white);
+            padding: 40px;
+            border-radius: 15px;
+            max-width: 600px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+
+        .btn-primary {
+            background-color: var(--tec-blue);
+            color: var(--tec-white);
+            border: none;
+            padding: 15px 40px;
+            font-size: 1.2rem;
+            border-radius: 30px;
+            cursor: pointer;
+            margin-top: 20px;
+            transition: background 0.3s;
+        }
+
+        .btn-primary:hover {
+            background-color: var(--tec-light-blue);
+        }
+
+        /* Pantalla de Juego */
+        #game-area {
+            position: relative;
+            width: 100%;
+            max-width: 800px;
+            height: 400px;
+            background-color: var(--tec-white);
+            border: 4px solid var(--tec-blue);
+            border-radius: 15px;
+            overflow: hidden;
+            margin-top: 20px;
+        }
+
+        #timer {
+            font-size: 2rem;
+            font-weight: bold;
+            color: var(--tec-blue);
+        }
+
+        .target {
+            position: absolute;
+            width: 50px;
+            height: 50px;
+            background-color: #FF8C00; /* Naranja para contraste */
+            border-radius: 50%;
+            cursor: pointer;
+            transition: top 0.2s, left 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            user-select: none;
+        }
+
+        /* Modal Pop-up */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 51, 0.8);
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .modal-content {
+            background: var(--tec-white);
+            padding: 40px;
+            border-radius: 20px;
+            max-width: 500px;
+            text-align: center;
+            border: 5px solid var(--tec-blue);
+            animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        @keyframes popIn {
+            0% { transform: scale(0.5); opacity: 0; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        .insignia-title {
+            color: var(--tec-blue);
+            font-size: 2rem;
+            margin-bottom: 10px;
+        }
+
+        .insignia-desc {
+            font-size: 1.1rem;
+            line-height: 1.5;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <img src="image_da05c5.jpg" alt="Logo Tec de Monterrey" class="header-logo">
+        <h1>EMPLEATEC</h1>
+        <img src="image_da0567.png" alt="Logo Tecmilenio" class="header-logo">
+    </header>
+
+    <div id="screen-menu" class="screen active-screen">
+        <h2 style="color: var(--tec-blue); font-size: 2rem; margin-bottom: 40px;">Selecciona tu Desafío</h2>
+        <div class="menu-container">
+            <button class="game-btn" onclick="showRules(1)">1. El Salto al Futuro</button>
+            <button class="game-btn" onclick="showRules(2)">2. Arquitecto de Conexiones</button>
+            <button class="game-btn" onclick="showRules(3)">3. Misión: Código Crítico</button>
+        </div>
+    </div>
+
+    <div id="screen-rules" class="screen">
+        <div class="rules-box">
+            <h2 id="rules-title" style="color: var(--tec-blue); font-size: 1.8rem;">Título del Juego</h2>
+            <p id="rules-text" style="font-size: 1.2rem; line-height: 1.6; margin: 20px 0;">Reglas aquí...</p>
+            <button class="btn-primary" onclick="startGame()">INICIAR (25s)</button>
+        </div>
+    </div>
+
+    <div id="screen-game" class="screen">
+        <div id="timer">Tiempo: 25</div>
+        <p>Haz clic en los objetivos que aparezcan lo más rápido posible.</p>
+        <div id="game-area">
+            <div id="target" class="target" onclick="hitTarget()">+</div>
+        </div>
+    </div>
+
+    <div id="result-modal" class="modal-overlay">
+        <div class="modal-content">
+            <h2 class="insignia-title" id="result-title">¡Insignia Desbloqueada!</h2>
+            <h3 style="color: #FF8C00; margin-top: 0;" id="result-skill">Nombre de Habilidad</h3>
+            <p class="insignia-desc" id="result-desc">Descripción de la habilidad adquirida.</p>
+            <button class="btn-primary" onclick="returnToMenu()">Regresar al Menú Principal</button>
+        </div>
+    </div>
+
+    <script>
+        // Variables globales
+        let currentGame = 0;
+        let timeLeft = 25;
+        let timerInterval;
+        let score = 0;
+
+        // Base de datos de juegos y recompensas basadas en el Consolidado
+        const gameData = {
+            1: {
+                title: "El Salto al Futuro",
+                rules: "Navega la plataforma digital. Haz clic en los nodos naranjas ('innovaciones tecnológicas') antes de que desaparezcan. Evita perder el ritmo.",
+                rewardTitle: "Visionario Audaz",
+                rewardDesc: "¡Felicidades! Tienes la capacidad de anticipar el impacto de nuevas tecnologías [cite: 112] y reconocer la necesidad del cambio, guiando la transición[cite: 24, 25]."
+            },
+            2: {
+                title: "Arquitecto de Conexiones",
+                rules: "El tiempo corre. Conecta rápidamente a las personas haciendo clic en los objetivos para fomentar el diálogo y la apertura en tu equipo.",
+                rewardTitle: "Catalizador de Talento",
+                rewardDesc: "¡Excelente! Destacas en impulsar el crecimiento personal y profesional [cite: 2, 3] y en relacionarte con los demás de manera efectiva para construir relaciones positivas[cite: 69, 70]."
+            },
+            3: {
+                title: "Misión: Código Crítico",
+                rules: "Escanea y analiza los datos. Haz clic en las fuentes de información productivas que aparezcan para descifrar el problema oculto.",
+                rewardTitle: "Detective de Soluciones",
+                rewardDesc: "¡Misión Cumplida! Tu perfil indica que analizas problemas complejos con lógica [cite: 104] y cuestionas supuestos para tomar decisiones libres de sesgos[cite: 49, 51]."
+            }
+        };
+
+        // Navegación entre pantallas
+        function switchScreen(screenId) {
+            document.querySelectorAll('.screen').forEach(el => el.classList.remove('active-screen'));
+            document.getElementById(screenId).classList.add('active-screen');
+        }
+
+        function showRules(gameId) {
+            currentGame = gameId;
+            document.getElementById('rules-title').innerText = gameData[gameId].title;
+            document.getElementById('rules-text').innerText = gameData[gameId].rules;
+            switchScreen('screen-rules');
+        }
+
+        function returnToMenu() {
+            document.getElementById('result-modal').style.display = 'none';
+            switchScreen('screen-menu');
+        }
+
+        // Lógica del Juego
+        function startGame() {
+            score = 0;
+            timeLeft = 25;
+            document.getElementById('timer').innerText = `Tiempo: ${timeLeft}`;
+            switchScreen('screen-game');
+            moveTarget();
+            
+            timerInterval = setInterval(() => {
+                timeLeft--;
+                document.getElementById('timer').innerText = `Tiempo: ${timeLeft}`;
+                
+                // Mover el objetivo cada segundo para aumentar dificultad
+                if(timeLeft % 2 === 0) moveTarget();
+
+                if (timeLeft <= 0) {
+                    endGame();
+                }
+            }, 1000);
+        }
+
+        function hitTarget() {
+            score++;
+            moveTarget();
+        }
+
+        function moveTarget() {
+            const area = document.getElementById('game-area');
+            const target = document.getElementById('target');
+            
+            const maxX = area.clientWidth - target.clientWidth;
+            const maxY = area.clientHeight - target.clientHeight;
+            
+            const randomX = Math.floor(Math.random() * maxX);
+            const randomY = Math.floor(Math.random() * maxY);
+            
+            target.style.left = `${randomX}px`;
+            target.style.top = `${randomY}px`;
+        }
+
+        function endGame() {
+            clearInterval(timerInterval);
+            
+            // Llenar datos del modal
+            document.getElementById('result-skill').innerText = gameData[currentGame].rewardTitle;
+            document.getElementById('result-desc').innerHTML = gameData[currentGame].rewardDesc + `<br><br><em>Puntos de interacción: ${score}</em>`;
+            
+            // Mostrar Modal
+            document.getElementById('result-modal').style.display = 'flex';
+        }
+    </script>
+</body>
+</html>
