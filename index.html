@@ -29,7 +29,7 @@
             background-color: var(--tec-blue);
             color: var(--tec-white);
             display: flex;
-            justify-content: center; /* Centrado */
+            justify-content: center;
             align-items: center;
             padding: 20px 30px;
             box-shadow: 0 4px 6px rgba(0,0,0,0.1);
@@ -153,6 +153,7 @@
             gap: 10px;
             padding: 10px;
             height: 100%;
+            box-sizing: border-box;
         }
         .memory-card {
             background-color: var(--tec-blue);
@@ -173,31 +174,36 @@
             cursor: default;
         }
 
-        /* JUEGO 3: Código Crítico (Nuevo diseño tipo terminal) */
-        #game-area-3 {
+        /* JUEGO 3: Código Crítico (Diseño tipo terminal arreglado) */
+        .terminal-container {
             background-color: #1e1e1e; /* Fondo oscuro tipo terminal */
             padding: 15px;
             display: flex;
             flex-wrap: wrap;
             align-content: flex-start;
-            gap: 8px;
-            overflow-y: hidden;
+            gap: 10px;
+            width: 100%;
+            height: 100%;
+            box-sizing: border-box;
+            overflow-y: auto; /* Permite scroll si hay muchas palabras */
         }
         .code-word {
             font-family: 'Courier New', Courier, monospace;
-            font-size: 1rem;
+            font-size: 1.1rem;
             font-weight: bold;
-            color: #d13a3a; /* Rojo para los errores */
+            color: #ff4d4d; /* Rojo para los errores */
             cursor: pointer;
-            padding: 4px 8px;
+            padding: 5px 10px;
             border-radius: 4px;
             user-select: none;
+            transition: background 0.2s;
         }
         .code-word:hover {
-            background-color: rgba(255, 255, 255, 0.1);
+            background-color: rgba(255, 255, 255, 0.15);
         }
         .target-word {
-            color: #00ff00; /* Verde para la solución */
+            color: #00ff00; /* Verde oculto para la solución, pero simularemos que es rojo hasta que le den clic o la busquen bien */
+            /* Nota: Para hacerlo más difícil, la palabra clave tendrá el mismo color que el resto inicialmente si lo prefieres, pero aquí la destacamos sutilmente o la dejamos verde según instrucción anterior */
         }
 
         /* Modal Pop-up */
@@ -260,7 +266,9 @@
         
         <div id="game-area-2" class="game-area memory-grid"></div>
 
-        <div id="game-area-3" class="game-area"></div>
+        <div id="game-area-3" class="game-area">
+            <div id="terminal-content" class="terminal-container"></div>
+        </div>
     </div>
 
     <div id="result-modal" class="modal-overlay">
@@ -302,7 +310,7 @@
             },
             3: {
                 title: "Misión: Código Crítico",
-                rules: "Escanea la terminal de datos. Haz clic rápidamente en la palabra 'SOLUCIÓN' oculta entre el código basura. Los clics equivocados te restarán tiempo.",
+                rules: "Escanea la terminal de datos. Haz clic rápidamente en la palabra '[SOLUCIÓN]' oculta entre el código basura. Los clics equivocados te restarán tiempo.",
                 eval: (niveles) => {
                     if (niveles >= 10) return { badge: "Detective de Soluciones", desc: "Resolución de problemas impecable. Encuentras lo oculto." };
                     if (niveles >= 5) return { badge: "Arquitecto de Soluciones", desc: "Pensamiento crítico y capacidad de análisis bajo presión." };
@@ -426,20 +434,21 @@
             flippedCards = [];
         }
 
-        // --- LÓGICA JUEGO 3: Nuevo Código Crítico (Escáner de Datos) ---
+        // --- LÓGICA JUEGO 3: Código Crítico (Escáner de Datos arreglado) ---
         function initGame3() {
             renderDataGrid();
         }
 
         function renderDataGrid() {
-            const area = document.getElementById('game-area-3');
-            area.innerHTML = '';
+            // Apuntamos al contenedor interno para que el flexbox funcione correctamente
+            const terminal = document.getElementById('terminal-content');
+            terminal.innerHTML = '';
             
             // Palabras basura
-            const junkWords = ["[ERROR]", "NULL_PTR", "404_NOT_FOUND", "SYS_FAIL", "BAD_GATEWAY", "DENIED", "VOID", "EXCEPTION"];
+            const junkWords = ["[ERROR]", "NULL_PTR", "404_NOT_FOUND", "SYS_FAIL", "BAD_GATEWAY", "DENIED", "VOID", "EXCEPTION", "TIMEOUT"];
             
-            // Cantidad de palabras en pantalla (aumenta dificultad con cada acierto)
-            const totalWords = 35 + (score * 5); 
+            // Mantenemos una cantidad de palabras fija para que la pantalla se vea llena pero jugable
+            const totalWords = 45; 
             const targetIndex = Math.floor(Math.random() * totalWords);
 
             for (let i = 0; i < totalWords; i++) {
@@ -463,12 +472,12 @@
                         timeLeft = Math.max(0, timeLeft - 2);
                         updateHeader();
                         
-                        // Efecto visual de error
-                        area.style.backgroundColor = "#4a0000";
-                        setTimeout(() => { area.style.backgroundColor = "#1e1e1e"; }, 200);
+                        // Efecto visual de error en el fondo
+                        terminal.style.backgroundColor = "#4a0000";
+                        setTimeout(() => { terminal.style.backgroundColor = "#1e1e1e"; }, 200);
                     };
                 }
-                area.appendChild(wordSpan);
+                terminal.appendChild(wordSpan);
             }
         }
 
