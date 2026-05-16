@@ -25,9 +25,9 @@
             color: var(--tec-dark);
             width: 100vw;
             height: 100vh;
-            overflow: hidden; /* Evita que la página se mueva hacia abajo/lados */
-            position: fixed; /* Fija la app en iOS/Android */
-            touch-action: none; /* Bloquea gestos del navegador como deslizar para refrescar */
+            overflow: hidden;
+            position: fixed;
+            touch-action: none;
         }
 
         /* Encabezado limpio y centrado */
@@ -49,7 +49,7 @@
             font-weight: bold;
         }
 
-        /* Pantallas (Se ajustan al espacio sobrante y no hacen scroll) */
+        /* Pantallas */
         .screen {
             display: none;
             flex-direction: column;
@@ -142,22 +142,22 @@
             position: relative;
             width: 100%;
             max-width: 600px;
-            height: 60vh; /* Se adapta dinámicamente al celular */
-            max-height: 400px; /* Límite para pantallas grandes */
+            height: 60vh;
+            max-height: 400px;
             background-color: var(--tec-white);
             border: 4px solid var(--tec-blue);
             border-radius: 15px;
             overflow: hidden;
             display: none; 
             box-sizing: border-box;
-            touch-action: none; /* Asegura que el área interior tampoco haga scroll accidental */
+            touch-action: none;
         }
 
         #game-area-1.active-game-area { display: block; }
         #game-area-2.active-game-area { display: grid; }
         #game-area-3.active-game-area { display: block; }
 
-        /* JUEGO 1: Caída de Objetos (Modificados para toque táctil) */
+        /* JUEGO 1: Caída de Objetos */
         .falling-item {
             position: absolute;
             width: 45px;
@@ -165,7 +165,6 @@
             border-radius: 50%;
             cursor: pointer;
             animation: fall linear forwards;
-            /* Mejora para touch: previene el tap-highlight en móviles */
             -webkit-tap-highlight-color: transparent; 
         }
         .good-item { background-color: var(--tec-light-blue); box-shadow: inset -5px -5px 10px rgba(0,0,0,0.2); }
@@ -179,7 +178,7 @@
         /* Efecto de Explosión tipo globo */
         .pop-effect {
             animation: popAnim 0.2s ease-out forwards !important;
-            pointer-events: none; /* Evita doble toque */
+            pointer-events: none;
         }
         @keyframes popAnim {
             0% { transform: scale(1); opacity: 1; }
@@ -225,9 +224,9 @@
             width: 100%;
             height: 100%;
             box-sizing: border-box;
-            overflow-y: auto; /* Único lugar que permite scroll interno si es necesario */
+            overflow-y: auto; 
             transition: background-color 0.2s;
-            touch-action: pan-y; /* Permite scroll vertical interno solo aquí */
+            touch-action: pan-y; 
         }
         .code-word {
             font-family: 'Courier New', Courier, monospace;
@@ -355,7 +354,7 @@
             },
             3: {
                 title: "Misión: Código Crítico",
-                rules: "Duración: 20 segundos.\nEscanea la terminal y toca SÓLO '[SOLUCIÓN]'. \nCambiará de lugar muy rápido. Cuidado con las distracciones verdes falsas. NO hay penalización de tiempo.",
+                rules: "Duración: 20 segundos.\nEscanea la terminal y toca SÓLO '[SOLUCIÓN]'. \nCambiará de lugar cada medio segundo. Cuidado con las distracciones verdes falsas. Equivocarte te restará 0.5 puntos.",
                 evaluarResultado: (aciertos) => {
                     if (aciertos >= 8) return { badge: "Detective de Soluciones", desc: "Resolución impecable. Ignoras el ruido y encuentras la verdad oculta." };
                     if (aciertos >= 4) return { badge: "Arquitecto de Soluciones", desc: "Pensamiento crítico asombroso bajo extrema presión visual." };
@@ -438,26 +437,20 @@
             const isGood = Math.random() > 0.60; 
             
             item.className = 'falling-item ' + (isGood ? 'good-item' : 'bad-item');
-            // Asegurar que no se salgan del área visual
             item.style.left = Math.floor(Math.random() * (area.clientWidth - 50)) + 'px';
             item.style.animationDuration = (Math.random() * 0.8 + 0.6) + 's';
             
-            // Función para explotar el globo
             const popItem = (e) => {
-                e.preventDefault(); // Previene doble activación touch/click
-                if(item.classList.contains('pop-effect')) return; // Evita doble puntaje
+                e.preventDefault(); 
+                if(item.classList.contains('pop-effect')) return; 
                 
                 score += isGood ? 20 : -15; 
                 updateHeader();
                 
-                // Activar animación de explosión
                 item.classList.add('pop-effect');
-                
-                // Removerlo después de explotar
                 setTimeout(() => item.remove(), 200); 
             };
 
-            // Soporte robusto para móviles y computadoras
             item.addEventListener('touchstart', popItem, {passive: false});
             item.addEventListener('mousedown', popItem);
 
@@ -509,7 +502,7 @@
             flippedCards = [];
         }
 
-        // --- JUEGO 3 ---
+        // --- JUEGO 3: CÓDIGO CRÍTICO (Modificado) ---
         let g3Spans = [];
         let g3RealTarget = -1;
         let g3FakeTargets = [];
@@ -529,7 +522,6 @@
                 wordSpan.className = 'code-word';
                 wordSpan.innerText = junkWords[Math.floor(Math.random() * junkWords.length)];
                 
-                // Soporte para touch/click
                 const hitTarget = (e) => { e.preventDefault(); handleG3Click(i); };
                 wordSpan.addEventListener('touchstart', hitTarget, {passive: false});
                 wordSpan.addEventListener('mousedown', hitTarget);
@@ -539,7 +531,8 @@
             }
 
             placeG3Target(); 
-            game3JumpInterval = setInterval(placeG3Target, 700);
+            // NUEVA VELOCIDAD: 500ms (medio segundo)
+            game3JumpInterval = setInterval(placeG3Target, 500);
         }
 
         function placeG3Target() {
@@ -582,8 +575,13 @@
 
                 clearInterval(game3JumpInterval);
                 placeG3Target();
-                game3JumpInterval = setInterval(placeG3Target, 700); 
+                // Reiniciar el intervalo a la misma velocidad de 500ms
+                game3JumpInterval = setInterval(placeG3Target, 500); 
             } else {
+                // PENALIZACIÓN: Restar medio punto
+                score -= 0.5;
+                updateHeader();
+
                 terminal.style.backgroundColor = "#4a0000"; 
                 setTimeout(() => { terminal.style.backgroundColor = "#1e1e1e"; }, 200);
             }
