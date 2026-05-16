@@ -13,6 +13,7 @@
             --tec-gray: #F0F0F0;
             --tec-dark: #333333;
             --tec-orange: #FF8C00;
+            --tec-red: #D32F2F;
         }
 
         body {
@@ -97,6 +98,19 @@
         }
         .btn-primary:hover { background-color: var(--tec-light-blue); }
 
+        .btn-exit {
+            background-color: var(--tec-red);
+            color: var(--tec-white);
+            border: none;
+            padding: 8px 15px;
+            font-size: 1rem;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: background 0.3s;
+        }
+        .btn-exit:hover { background-color: #B71C1C; }
+
         .rules-box {
             background: var(--tec-white);
             padding: 40px;
@@ -109,6 +123,7 @@
         .game-header {
             display: flex;
             justify-content: space-between;
+            align-items: center;
             width: 100%;
             max-width: 600px;
             font-size: 1.5rem;
@@ -125,10 +140,14 @@
             border: 4px solid var(--tec-blue);
             border-radius: 15px;
             overflow: hidden;
-            display: none; 
+            display: none; /* Asegura que estén ocultos por defecto */
             box-sizing: border-box;
         }
-        .active-game-area { display: block; }
+
+        /* Aseguramos los modos de display correctos al activarse */
+        #game-area-1.active-game-area { display: block; }
+        #game-area-2.active-game-area { display: grid; }
+        #game-area-3.active-game-area { display: block; }
 
         /* JUEGO 1: Caída de Objetos */
         .falling-item {
@@ -146,14 +165,12 @@
             to { top: 450px; }
         }
 
-        /* JUEGO 2: Memoria */
+        /* JUEGO 2: Memoria (Modificado a 20 cartas / 5 columnas) */
         .memory-grid {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 10px;
+            grid-template-columns: repeat(5, 1fr); /* 5 columnas x 4 filas */
+            gap: 8px;
             padding: 10px;
             height: 100%;
-            box-sizing: border-box;
         }
         .memory-card {
             background-color: var(--tec-blue);
@@ -162,7 +179,7 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 2rem;
+            font-size: 1.8rem;
             color: transparent;
             transition: transform 0.2s;
             user-select: none;
@@ -174,9 +191,9 @@
             cursor: default;
         }
 
-        /* JUEGO 3: Código Crítico (Diseño tipo terminal arreglado) */
+        /* JUEGO 3: Código Crítico (Terminal activa) */
         .terminal-container {
-            background-color: #1e1e1e; /* Fondo oscuro tipo terminal */
+            background-color: #1e1e1e;
             padding: 15px;
             display: flex;
             flex-wrap: wrap;
@@ -185,25 +202,24 @@
             width: 100%;
             height: 100%;
             box-sizing: border-box;
-            overflow-y: auto; /* Permite scroll si hay muchas palabras */
+            overflow-y: auto;
+            transition: background-color 0.2s;
         }
         .code-word {
             font-family: 'Courier New', Courier, monospace;
             font-size: 1.1rem;
             font-weight: bold;
-            color: #ff4d4d; /* Rojo para los errores */
+            color: #ff4d4d; /* Errores en rojo */
             cursor: pointer;
-            padding: 5px 10px;
+            padding: 5px 8px;
             border-radius: 4px;
             user-select: none;
-            transition: background 0.2s;
         }
         .code-word:hover {
             background-color: rgba(255, 255, 255, 0.15);
         }
         .target-word {
-            color: #00ff00; /* Verde oculto para la solución, pero simularemos que es rojo hasta que le den clic o la busquen bien */
-            /* Nota: Para hacerlo más difícil, la palabra clave tendrá el mismo color que el resto inicialmente si lo prefieres, pero aquí la destacamos sutilmente o la dejamos verde según instrucción anterior */
+            color: #00ff00; /* Solución en verde */
         }
 
         /* Modal Pop-up */
@@ -252,13 +268,16 @@
         <div class="rules-box">
             <h2 id="rules-title" style="color: var(--tec-blue); font-size: 1.8rem;">Título</h2>
             <p id="rules-text" style="font-size: 1.2rem; margin: 20px 0;">Reglas...</p>
-            <button class="btn-primary" onclick="startGame()">INICIAR (25s)</button>
+            <button class="btn-primary" onclick="startGame()">INICIAR RETO</button>
+            <br>
+            <button class="btn-exit" style="margin-top: 15px;" onclick="abortGame()">Volver al Menú</button>
         </div>
     </div>
 
     <div id="screen-game" class="screen">
         <div class="game-header">
-            <span id="timer">Tiempo: 25s</span>
+            <span id="timer">Tiempo: 0s</span>
+            <button class="btn-exit" onclick="abortGame()">Salir al Menú</button>
             <span id="score-display">Puntos: 0</span>
         </div>
         
@@ -283,43 +302,44 @@
     <script>
         // Variables globales
         let currentGame = 0;
-        let timeLeft = 25;
+        let timeLeft = 0;
         let timerInterval;
         let score = 0;
-        let gameLogicInterval;
+        let game1Interval;
+        let game3JumpInterval;
 
-        // Base de datos de juegos e Insignias
+        // Base de datos de juegos
         const gameData = {
             1: {
                 title: "El Salto al Futuro",
-                rules: "Haz clic en los círculos azules (innovaciones) que caen para sumar puntos. Evita los rojos (resistencias). ¡Demuestra tus reflejos!",
+                rules: "Duración: 20 segundos.\nHaz clic rápido en los círculos azules (innovaciones) que caen. Evita los rojos (resistencias). ¡Ahora caen más rápido!",
                 eval: (pts) => {
-                    if (pts >= 150) return { badge: "Agente de Cambio 4.0", desc: "Destreza Digital Excepcional." };
-                    if (pts >= 80) return { badge: "Visionario Audaz", desc: "Gran capacidad para liderar el cambio." };
+                    if (pts >= 120) return { badge: "Agente de Cambio 4.0", desc: "Destreza Digital Excepcional bajo presión." };
+                    if (pts >= 60) return { badge: "Visionario Audaz", desc: "Gran capacidad para liderar el cambio." };
                     return { badge: "Ninja de la Adaptabilidad", desc: "Habilidad para ajustarse al entorno cambiante." };
                 }
             },
             2: {
                 title: "Arquitecto de Conexiones",
-                rules: "Juego de memoria. Encuentra los pares de cartas ocultas lo más rápido posible. Haz clic para voltearlas.",
+                rules: "Duración: 30 segundos.\nJuego de memoria. Encuentra los 10 pares de cartas ocultas lo más rápido posible. Haz clic para voltearlas.",
                 eval: (pares) => {
-                    if (pares >= 6) return { badge: "Catalizador de Talento", desc: "Excelente inteligencia social e inspiración." };
-                    if (pares >= 3) return { badge: "Desarrollador de Talento", desc: "Gran enfoque en construir relaciones." };
-                    return { badge: "Embajador de Servicio", desc: "Fuerte orientación al servicio y empatía." };
+                    if (pares >= 8) return { badge: "Catalizador de Talento", desc: "Excelente inteligencia y retención." };
+                    if (pares >= 4) return { badge: "Desarrollador de Talento", desc: "Gran enfoque y persistencia al conectar." };
+                    return { badge: "Embajador de Servicio", desc: "Mucha orientación y paciencia al detalle." };
                 }
             },
             3: {
                 title: "Misión: Código Crítico",
-                rules: "Escanea la terminal de datos. Haz clic rápidamente en la palabra '[SOLUCIÓN]' oculta entre el código basura. Los clics equivocados te restarán tiempo.",
-                eval: (niveles) => {
-                    if (niveles >= 10) return { badge: "Detective de Soluciones", desc: "Resolución de problemas impecable. Encuentras lo oculto." };
-                    if (niveles >= 5) return { badge: "Arquitecto de Soluciones", desc: "Pensamiento crítico y capacidad de análisis bajo presión." };
-                    return { badge: "Generador de Resultados", desc: "Fuerte orientación a resultados rápidos y persistencia." };
+                rules: "Duración: 20 segundos.\nEscanea la terminal. Atrapa la palabra '[SOLUCIÓN]' que cambiará de lugar CADA SEGUNDO. Si tocas el código rojo, pierdes tiempo.",
+                eval: (aciertos) => {
+                    if (aciertos >= 8) return { badge: "Detective de Soluciones", desc: "Resolución impecable y ágil. Encuentras lo oculto al instante." };
+                    if (aciertos >= 4) return { badge: "Arquitecto de Soluciones", desc: "Pensamiento crítico asombroso bajo presión visual." };
+                    return { badge: "Generador de Resultados", desc: "Fuerte orientación a lograr objetivos superando obstáculos." };
                 }
             }
         };
 
-        // Navegación
+        // Navegación limpia y segura
         function switchScreen(screenId) {
             document.querySelectorAll('.screen').forEach(el => el.classList.remove('active-screen'));
             document.getElementById(screenId).classList.add('active-screen');
@@ -332,22 +352,38 @@
             switchScreen('screen-rules');
         }
 
-        function returnToMenu() {
-            document.getElementById('result-modal').style.display = 'none';
-            switchScreen('screen-menu');
+        function clearAllIntervals() {
             clearInterval(timerInterval);
-            clearInterval(gameLogicInterval);
+            clearInterval(game1Interval);
+            clearInterval(game3JumpInterval);
         }
 
-        // Inicio Común
+        function abortGame() {
+            clearAllIntervals();
+            switchScreen('screen-menu');
+        }
+
+        function returnToMenu() {
+            document.getElementById('result-modal').style.display = 'none';
+            abortGame();
+        }
+
+        // --- Inicio del Juego Común ---
         function startGame() {
+            clearAllIntervals();
             score = 0;
-            timeLeft = 25;
+            
+            // Asignar tiempos según el juego para mayor dificultad
+            if (currentGame === 1) timeLeft = 20;
+            if (currentGame === 2) timeLeft = 30; // 30s porque son 20 cartas
+            if (currentGame === 3) timeLeft = 20;
+
             updateHeader();
             switchScreen('screen-game');
             
-            // Mostrar solo el área del juego actual
+            // Ocultar todas las áreas de juego y limpiar contenidos previos si existen
             document.querySelectorAll('.game-area').forEach(el => el.classList.remove('active-game-area'));
+            
             const currentArea = document.getElementById(`game-area-${currentGame}`);
             currentArea.classList.add('active-game-area');
 
@@ -370,24 +406,29 @@
             document.getElementById('score-display').innerText = displayScore;
         }
 
-        // --- LÓGICA JUEGO 1: Objetos cayendo ---
+        // --- LÓGICA JUEGO 1: Objetos cayendo (Más rápidos) ---
         function initGame1() {
             const area = document.getElementById('game-area-1');
             area.innerHTML = '';
-            gameLogicInterval = setInterval(() => {
+            
+            // Aparecen cada 450ms en lugar de 600ms para más agilidad
+            game1Interval = setInterval(() => {
                 if (timeLeft > 0) spawnItem(area);
-            }, 600);
+            }, 450);
         }
 
         function spawnItem(area) {
             const item = document.createElement('div');
-            const isGood = Math.random() > 0.3;
+            const isGood = Math.random() > 0.35; // 65% buenos, 35% malos
             item.classList.add('falling-item');
             item.classList.add(isGood ? 'good-item' : 'bad-item');
             item.style.left = Math.floor(Math.random() * (area.clientWidth - 40)) + 'px';
-            item.style.animationDuration = `${Math.random() * 2 + 1.5}s`;
+            
+            // Caen más rápido: de 0.8 a 2.0 segundos de duración
+            item.style.animationDuration = `${Math.random() * 1.2 + 0.8}s`;
+            
             item.onclick = () => {
-                score += isGood ? 20 : -10; 
+                score += isGood ? 20 : -15; // Más penalización si se equivoca
                 updateHeader();
                 item.remove();
             };
@@ -395,14 +436,17 @@
             area.appendChild(item);
         }
 
-        // --- LÓGICA JUEGO 2: Memoria ---
+        // --- LÓGICA JUEGO 2: Memoria (20 Tarjetas / 10 Pares) ---
         let flippedCards = [];
         function initGame2() {
             const area = document.getElementById('game-area-2');
             area.innerHTML = '';
             flippedCards = [];
-            const emojis = ['💡', '🤝', '🚀', '🎯', '📈', '🧠'];
+            
+            // 10 Emojis = 20 Cartas
+            const emojis = ['💡', '🤝', '🚀', '🎯', '📈', '🧠', '⚙️', '🔍', '💻', '🌟'];
             let deck = [...emojis, ...emojis].sort(() => 0.5 - Math.random());
+            
             deck.forEach(symbol => {
                 const card = document.createElement('div');
                 card.classList.add('memory-card');
@@ -417,7 +461,7 @@
             if (flippedCards.length < 2 && !card.classList.contains('flipped')) {
                 card.classList.add('flipped');
                 flippedCards.push(card);
-                if (flippedCards.length === 2) setTimeout(checkMatch, 500);
+                if (flippedCards.length === 2) setTimeout(checkMatch, 400);
             }
         }
 
@@ -426,7 +470,7 @@
             if (card1.dataset.symbol === card2.dataset.symbol) {
                 score++; 
                 updateHeader();
-                if (score === 6) endGame(); 
+                if (score === 10) endGame(); // 10 pares es ganar automáticamente
             } else {
                 card1.classList.remove('flipped');
                 card2.classList.remove('flipped');
@@ -434,57 +478,73 @@
             flippedCards = [];
         }
 
-        // --- LÓGICA JUEGO 3: Código Crítico (Escáner de Datos arreglado) ---
-        function initGame3() {
-            renderDataGrid();
-        }
+        // --- LÓGICA JUEGO 3: Código Crítico (Salto cada 1 segundo) ---
+        let g3Spans = [];
+        let currentTargetIndex = -1;
+        const junkWords = ["[ERROR]", "NULL_PTR", "404_NOT_FOUND", "SYS_FAIL", "BAD_GATEWAY", "DENIED", "VOID", "EXCEPTION", "TIMEOUT"];
 
-        function renderDataGrid() {
-            // Apuntamos al contenedor interno para que el flexbox funcione correctamente
+        function initGame3() {
             const terminal = document.getElementById('terminal-content');
             terminal.innerHTML = '';
-            
-            // Palabras basura
-            const junkWords = ["[ERROR]", "NULL_PTR", "404_NOT_FOUND", "SYS_FAIL", "BAD_GATEWAY", "DENIED", "VOID", "EXCEPTION", "TIMEOUT"];
-            
-            // Mantenemos una cantidad de palabras fija para que la pantalla se vea llena pero jugable
-            const totalWords = 45; 
-            const targetIndex = Math.floor(Math.random() * totalWords);
+            g3Spans = [];
+            currentTargetIndex = -1;
 
+            const totalWords = 45; 
             for (let i = 0; i < totalWords; i++) {
-                const wordSpan = document.createElement('span');
+                let wordSpan = document.createElement('span');
                 wordSpan.classList.add('code-word');
-                
-                if (i === targetIndex) {
-                    // Palabra correcta
-                    wordSpan.innerText = "[SOLUCIÓN]";
-                    wordSpan.classList.add('target-word');
-                    wordSpan.onclick = () => {
-                        score++;
-                        updateHeader();
-                        renderDataGrid(); // Refrescar pantalla
-                    };
-                } else {
-                    // Palabra incorrecta
-                    wordSpan.innerText = junkWords[Math.floor(Math.random() * junkWords.length)];
-                    wordSpan.onclick = () => {
-                        // Penalización de tiempo si hace clic en un error
-                        timeLeft = Math.max(0, timeLeft - 2);
-                        updateHeader();
-                        
-                        // Efecto visual de error en el fondo
-                        terminal.style.backgroundColor = "#4a0000";
-                        setTimeout(() => { terminal.style.backgroundColor = "#1e1e1e"; }, 200);
-                    };
-                }
+                wordSpan.innerText = junkWords[Math.floor(Math.random() * junkWords.length)];
+                wordSpan.onclick = () => handleG3Click(i);
                 terminal.appendChild(wordSpan);
+                g3Spans.push(wordSpan); // Guardamos la referencia
+            }
+
+            placeG3Target(); // Colocar el primer objetivo
+            
+            // Hacer que la palabra salte automáticamente cada 1 segundo
+            game3JumpInterval = setInterval(placeG3Target, 1000);
+        }
+
+        function placeG3Target() {
+            if (timeLeft <= 0) return;
+            
+            // Si ya hay un target, lo regresamos a ser palabra basura roja
+            if (currentTargetIndex !== -1) {
+                g3Spans[currentTargetIndex].innerText = junkWords[Math.floor(Math.random() * junkWords.length)];
+                g3Spans[currentTargetIndex].classList.remove('target-word');
+            }
+
+            // Elegir nueva posición aleatoria
+            currentTargetIndex = Math.floor(Math.random() * g3Spans.length);
+            g3Spans[currentTargetIndex].innerText = "[SOLUCIÓN]";
+            g3Spans[currentTargetIndex].classList.add('target-word');
+        }
+
+        function handleG3Click(index) {
+            if (index === currentTargetIndex) {
+                score++;
+                updateHeader();
+                
+                // Limpiar el timer y forzar un salto inmediato a otra posición
+                clearInterval(game3JumpInterval);
+                placeG3Target();
+                game3JumpInterval = setInterval(placeG3Target, 1000); 
+                
+            } else {
+                // Penalización de tiempo
+                timeLeft = Math.max(0, timeLeft - 2);
+                updateHeader();
+                
+                // Efecto visual de error
+                const terminal = document.getElementById('terminal-content');
+                terminal.style.backgroundColor = "#4a0000";
+                setTimeout(() => { terminal.style.backgroundColor = "#1e1e1e"; }, 200);
             }
         }
 
         // --- Fin del Juego ---
         function endGame() {
-            clearInterval(timerInterval);
-            clearInterval(gameLogicInterval);
+            clearAllIntervals();
             const result = gameData[currentGame].eval(score);
             document.getElementById('result-badge').innerText = result.badge;
             document.getElementById('result-desc').innerText = result.desc;
