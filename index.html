@@ -25,7 +25,7 @@
             overflow-x: hidden;
         }
 
-        /* Encabezado sin logos, solo texto centrado */
+        /* Encabezado limpio y centrado */
         header {
             background-color: var(--tec-blue);
             color: var(--tec-white);
@@ -43,7 +43,7 @@
             font-weight: bold;
         }
 
-        /* Pantallas */
+        /* Pantallas (Se ocultan o muestran dinámicamente) */
         .screen {
             display: none;
             flex-direction: column;
@@ -197,3 +197,366 @@
             display: flex;
             flex-wrap: wrap;
             align-content: flex-start;
+            gap: 10px;
+            width: 100%;
+            height: 100%;
+            box-sizing: border-box;
+            overflow-y: auto;
+            transition: background-color 0.2s;
+        }
+        .code-word {
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 1.1rem;
+            font-weight: bold;
+            color: #ff4d4d; /* Errores en rojo */
+            cursor: pointer;
+            padding: 5px 8px;
+            border-radius: 4px;
+            user-select: none;
+        }
+        .code-word:hover {
+            background-color: rgba(255, 255, 255, 0.15);
+        }
+        .target-word {
+            color: #00ff00; /* Solución y falsos en verde */
+        }
+
+        /* Modal Pop-up */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 51, 0.8);
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        .modal-content {
+            background: var(--tec-white);
+            padding: 40px;
+            border-radius: 20px;
+            max-width: 500px;
+            text-align: center;
+            border: 5px solid var(--tec-orange);
+            animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        @keyframes popIn {
+            0% { transform: scale(0.5); opacity: 0; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        .insignia-title { color: var(--tec-orange); font-size: 2rem; margin-bottom: 5px; }
+        .insignia-desc { font-size: 1.1rem; color: var(--tec-dark); font-weight: bold; margin-bottom: 20px; }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>EMPLEATEC</h1>
+    </header>
+
+    <div id="screen-menu" class="screen active-screen">
+        <h2 style="color: var(--tec-blue); font-size: 2rem; margin-bottom: 40px;">Selecciona tu Desafío</h2>
+        <div class="menu-container">
+            <button class="game-btn" onclick="showRules(1)">1. El Salto al Futuro</button>
+            <button class="game-btn" onclick="showRules(2)">2. Arquitecto de Conexiones</button>
+            <button class="game-btn" onclick="showRules(3)">3. Misión: Código Crítico</button>
+        </div>
+    </div>
+
+    <div id="screen-rules" class="screen">
+        <div class="rules-box">
+            <h2 id="rules-title" style="color: var(--tec-blue); font-size: 1.8rem;">Título</h2>
+            <p id="rules-text" style="font-size: 1.2rem; margin: 20px 0; white-space: pre-wrap;">Reglas...</p>
+            <button class="btn-primary" onclick="startGame()">INICIAR RETO</button>
+            <br>
+            <button class="btn-exit" style="margin-top: 15px;" onclick="abortGame()">Volver al Menú</button>
+        </div>
+    </div>
+
+    <div id="screen-game" class="screen">
+        <div class="game-header">
+            <span id="timer">Tiempo: 0s</span>
+            <button class="btn-exit" onclick="abortGame()">Salir al Menú</button>
+            <span id="score-display">Puntos: 0</span>
+        </div>
+        
+        <div id="game-area-1" class="game-area"></div>
+        <div id="game-area-2" class="game-area memory-grid"></div>
+        <div id="game-area-3" class="game-area">
+            <div id="terminal-content" class="terminal-container"></div>
+        </div>
+    </div>
+
+    <div id="result-modal" class="modal-overlay">
+        <div class="modal-content">
+            <h2 style="color: var(--tec-blue); margin-top: 0;">¡Insignia Obtenida!</h2>
+            <h3 class="insignia-title" id="result-badge">Insignia</h3>
+            <p class="insignia-desc" id="result-desc">Habilidad destacada.</p>
+            <button class="btn-primary" onclick="returnToMenu()">Regresar al Menú</button>
+        </div>
+    </div>
+
+    <script>
+        // Variables globales
+        let currentGame = 0;
+        let timeLeft = 0;
+        let timerInterval = null;
+        let score = 0;
+        let game1Interval = null;
+        let game3JumpInterval = null;
+
+        // Base de datos de juegos y evaluación
+        const gameData = {
+            1: {
+                title: "El Salto al Futuro",
+                rules: "Duración: 20 segundos.\nHaz clic en los círculos azules. ¡Cuidado! Ahora caen MÁS rápidos y hay muchos MÁS círculos rojos (resistencias). ¡Demuestra tus reflejos!",
+                evaluarResultado: (pts) => {
+                    if (pts >= 120) return { badge: "Agente de Cambio 4.0", desc: "Destreza Digital Excepcional bajo presión y saturación." };
+                    if (pts >= 60) return { badge: "Visionario Audaz", desc: "Gran capacidad para liderar y filtrar información rápidamente." };
+                    return { badge: "Ninja de la Adaptabilidad", desc: "Habilidad constante para ajustarse a un entorno cambiante." };
+                }
+            },
+            2: {
+                title: "Arquitecto de Conexiones",
+                rules: "Duración: 30 segundos.\nJuego de memoria. Encuentra los 10 pares de cartas ocultas lo más rápido posible. Haz clic para voltearlas.",
+                evaluarResultado: (pares) => {
+                    if (pares >= 8) return { badge: "Catalizador de Talento", desc: "Excelente inteligencia y retención de patrones." };
+                    if (pares >= 4) return { badge: "Desarrollador de Talento", desc: "Gran enfoque y persistencia al conectar equipos." };
+                    return { badge: "Embajador de Servicio", desc: "Mucha orientación y paciencia al detalle." };
+                }
+            },
+            3: {
+                title: "Misión: Código Crítico",
+                rules: "Duración: 20 segundos.\nEscanea la terminal y haz clic SÓLO en '[SOLUCIÓN]'. \nCambiará cada 0.70 SEGUNDOS. Cuidado con las distracciones verdes falsas. Concéntrate y suma todos los puntos que puedas. NO hay penalización de tiempo.",
+                evaluarResultado: (aciertos) => {
+                    if (aciertos >= 8) return { badge: "Detective de Soluciones", desc: "Resolución impecable. Ignoras el ruido y encuentras la verdad oculta." };
+                    if (aciertos >= 4) return { badge: "Arquitecto de Soluciones", desc: "Pensamiento crítico asombroso bajo extrema presión visual." };
+                    return { badge: "Generador de Resultados", desc: "Fuerte orientación a lograr objetivos superando obstáculos constantes." };
+                }
+            }
+        };
+
+        // Utilidades de navegación
+        function switchScreen(screenId) {
+            document.querySelectorAll('.screen').forEach(el => el.classList.remove('active-screen'));
+            document.getElementById(screenId).classList.add('active-screen');
+        }
+
+        function showRules(gameId) {
+            currentGame = gameId;
+            document.getElementById('rules-title').innerText = gameData[gameId].title;
+            document.getElementById('rules-text').innerText = gameData[gameId].rules;
+            switchScreen('screen-rules');
+        }
+
+        function clearAllIntervals() {
+            if(timerInterval) clearInterval(timerInterval);
+            if(game1Interval) clearInterval(game1Interval);
+            if(game3JumpInterval) clearInterval(game3JumpInterval);
+        }
+
+        function abortGame() {
+            clearAllIntervals();
+            switchScreen('screen-menu');
+        }
+
+        function returnToMenu() {
+            document.getElementById('result-modal').style.display = 'none';
+            abortGame();
+        }
+
+        // Lógica de inicio de partida
+        function startGame() {
+            clearAllIntervals();
+            score = 0;
+            
+            // Asignación de tiempo
+            if (currentGame === 1) timeLeft = 20;
+            if (currentGame === 2) timeLeft = 30; 
+            if (currentGame === 3) timeLeft = 20;
+
+            updateHeader();
+            switchScreen('screen-game');
+            
+            // Limpiar y activar area correspondiente
+            document.querySelectorAll('.game-area').forEach(el => el.classList.remove('active-game-area'));
+            document.getElementById('game-area-' + currentGame).classList.add('active-game-area');
+
+            if (currentGame === 1) initGame1();
+            if (currentGame === 2) initGame2();
+            if (currentGame === 3) initGame3();
+
+            // Arrancar reloj
+            timerInterval = setInterval(() => {
+                timeLeft--;
+                updateHeader();
+                if (timeLeft <= 0) endGame();
+            }, 1000);
+        }
+
+        function updateHeader() {
+            document.getElementById('timer').innerText = "Tiempo: " + timeLeft + "s";
+            let displayScore = currentGame === 2 ? "Pares: " + score : (currentGame === 3 ? "Aciertos: " + score : "Puntos: " + score);
+            document.getElementById('score-display').innerText = displayScore;
+        }
+
+        // --- JUEGO 1 ---
+        function initGame1() {
+            const area = document.getElementById('game-area-1');
+            area.innerHTML = '';
+            game1Interval = setInterval(() => {
+                if (timeLeft > 0) spawnItem(area);
+            }, 350);
+        }
+
+        function spawnItem(area) {
+            const item = document.createElement('div');
+            const isGood = Math.random() > 0.60; 
+            
+            item.className = 'falling-item ' + (isGood ? 'good-item' : 'bad-item');
+            item.style.left = Math.floor(Math.random() * (area.clientWidth - 40)) + 'px';
+            item.style.animationDuration = (Math.random() * 0.8 + 0.6) + 's';
+            
+            item.onclick = () => {
+                score += isGood ? 20 : -15; 
+                updateHeader();
+                item.remove();
+            };
+            item.addEventListener('animationend', () => item.remove());
+            area.appendChild(item);
+        }
+
+        // --- JUEGO 2 ---
+        let flippedCards = [];
+        function initGame2() {
+            const area = document.getElementById('game-area-2');
+            area.innerHTML = '';
+            flippedCards = [];
+            
+            const emojis = ['💡', '🤝', '🚀', '🎯', '📈', '🧠', '⚙️', '🔍', '💻', '🌟'];
+            let deck = emojis.concat(emojis).sort(() => 0.5 - Math.random());
+            
+            deck.forEach(symbol => {
+                const card = document.createElement('div');
+                card.className = 'memory-card';
+                card.dataset.symbol = symbol;
+                card.innerText = symbol;
+                card.onclick = () => handleCardClick(card);
+                area.appendChild(card);
+            });
+        }
+
+        function handleCardClick(card) {
+            if (flippedCards.length < 2 && !card.classList.contains('flipped')) {
+                card.classList.add('flipped');
+                flippedCards.push(card);
+                if (flippedCards.length === 2) setTimeout(checkMatch, 400);
+            }
+        }
+
+        function checkMatch() {
+            const card1 = flippedCards[0];
+            const card2 = flippedCards[1];
+            if (card1.dataset.symbol === card2.dataset.symbol) {
+                score++; 
+                updateHeader();
+                if (score === 10) endGame(); 
+            } else {
+                card1.classList.remove('flipped');
+                card2.classList.remove('flipped');
+            }
+            flippedCards = [];
+        }
+
+        // --- JUEGO 3 ---
+        let g3Spans = [];
+        let g3RealTarget = -1;
+        let g3FakeTargets = [];
+        const junkWords = ["[ERROR]", "NULL_PTR", "404_NOT_FOUND", "SYS_FAIL", "BAD_GATEWAY", "DENIED", "VOID", "EXCEPTION", "TIMEOUT"];
+        const fakeGreenWords = ["[S0LUCIÓN]", "[SOLUCION]", "[SOLUC1ÓN]", "[S0LUC1ON]", "[ERROR_OK]"];
+
+        function initGame3() {
+            const terminal = document.getElementById('terminal-content');
+            terminal.innerHTML = '';
+            g3Spans = [];
+            g3RealTarget = -1;
+            g3FakeTargets = [];
+
+            const totalWords = 45; 
+            for (let i = 0; i < totalWords; i++) {
+                let wordSpan = document.createElement('span');
+                wordSpan.className = 'code-word';
+                wordSpan.innerText = junkWords[Math.floor(Math.random() * junkWords.length)];
+                wordSpan.onclick = () => handleG3Click(i);
+                terminal.appendChild(wordSpan);
+                g3Spans.push(wordSpan);
+            }
+
+            placeG3Target(); 
+            game3JumpInterval = setInterval(placeG3Target, 700);
+        }
+
+        function placeG3Target() {
+            if (timeLeft <= 0) return;
+            
+            // Limpiar pantalla anterior
+            if (g3RealTarget !== -1) {
+                g3Spans[g3RealTarget].innerText = junkWords[Math.floor(Math.random() * junkWords.length)];
+                g3Spans[g3RealTarget].classList.remove('target-word');
+            }
+            g3FakeTargets.forEach(idx => {
+                g3Spans[idx].innerText = junkWords[Math.floor(Math.random() * junkWords.length)];
+                g3Spans[idx].classList.remove('target-word');
+            });
+            g3FakeTargets = [];
+
+            // Poner objetivo correcto
+            g3RealTarget = Math.floor(Math.random() * g3Spans.length);
+            g3Spans[g3RealTarget].innerText = "[SOLUCIÓN]";
+            g3Spans[g3RealTarget].classList.add('target-word');
+
+            // Poner objetivos falsos
+            let numFakes = Math.floor(Math.random() * 3) + 1;
+            for(let i = 0; i < numFakes; i++) {
+                let fakeIdx = Math.floor(Math.random() * g3Spans.length);
+                if(fakeIdx !== g3RealTarget && !g3FakeTargets.includes(fakeIdx)) {
+                    g3FakeTargets.push(fakeIdx);
+                    g3Spans[fakeIdx].innerText = fakeGreenWords[Math.floor(Math.random() * fakeGreenWords.length)];
+                    g3Spans[fakeIdx].classList.add('target-word'); 
+                }
+            }
+        }
+
+        function handleG3Click(index) {
+            const terminal = document.getElementById('terminal-content');
+            
+            if (index === g3RealTarget) {
+                // Acierto (Suma puntos, no afecta tiempo)
+                score++;
+                updateHeader();
+                
+                terminal.style.backgroundColor = "#003300"; 
+                setTimeout(() => { terminal.style.backgroundColor = "#1e1e1e"; }, 200);
+
+                clearInterval(game3JumpInterval);
+                placeG3Target();
+                game3JumpInterval = setInterval(placeG3Target, 700); 
+                
+            } else {
+                // Error (No resta tiempo, solo avisa color rojo)
+                terminal.style.backgroundColor = "#4a0000"; 
+                setTimeout(() => { terminal.style.backgroundColor = "#1e1e1e"; }, 200);
+            }
+        }
+
+        // --- CÁLCULO FINAL ---
+        function endGame() {
+            clearAllIntervals();
+            const result = gameData[currentGame].evaluarResultado(score);
+            document.getElementById('result-badge').innerText = result.badge;
+            document.getElementById('result-desc').innerText = result.desc;
+            document.getElementById('result-modal').style.display = 'flex';
+        }
+    </script>
+</body>
+</html>
