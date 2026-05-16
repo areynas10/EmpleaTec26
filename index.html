@@ -326,7 +326,7 @@
             },
             3: {
                 title: "Misión: Código Crítico",
-                rules: "Duración: 20 segundos.\nEscanea la terminal y haz clic SÓLO en '[SOLUCIÓN]'. \nCambiará cada MEDIO SEGUNDO y aparecerán distracciones verdes casi idénticas. ¡Lee rápido!",
+                rules: "Duración: 20 segundos.\nEscanea la terminal y haz clic SÓLO en '[SOLUCIÓN]'. \nCambiará cada 0.70 SEGUNDOS. Cuidado con las distracciones verdes falsas, si haces clic en ellas o en las rojas, perderás 2 segundos.",
                 eval: (aciertos) => {
                     if (aciertos >= 8) return { badge: "Detective de Soluciones", desc: "Resolución impecable. Ignoras el ruido y encuentras la verdad oculta." };
                     if (aciertos >= 4) return { badge: "Arquitecto de Soluciones", desc: "Pensamiento crítico asombroso bajo extrema presión visual." };
@@ -367,6 +367,7 @@
             clearAllIntervals();
             score = 0;
             
+            // Tiempos reglamentarios exactos
             if (currentGame === 1) timeLeft = 20;
             if (currentGame === 2) timeLeft = 30; 
             if (currentGame === 3) timeLeft = 20;
@@ -399,7 +400,6 @@
             const area = document.getElementById('game-area-1');
             area.innerHTML = '';
             
-            // Aparecen muy rápido (cada 350ms)
             game1Interval = setInterval(() => {
                 if (timeLeft > 0) spawnItem(area);
             }, 350);
@@ -407,14 +407,12 @@
 
         function spawnItem(area) {
             const item = document.createElement('div');
-            // 60% probabilidad de ser ROJO (malo) para confundir más
             const isGood = Math.random() > 0.60; 
             
             item.classList.add('falling-item');
             item.classList.add(isGood ? 'good-item' : 'bad-item');
             item.style.left = Math.floor(Math.random() * (area.clientWidth - 40)) + 'px';
             
-            // Velocidad mucho más rápida: entre 0.6s y 1.4s de duración de caída
             item.style.animationDuration = `${Math.random() * 0.8 + 0.6}s`;
             
             item.onclick = () => {
@@ -467,7 +465,7 @@
             flippedCards = [];
         }
 
-        // --- LÓGICA JUEGO 3: Código Crítico (Distracción y Medio Segundo) ---
+        // --- LÓGICA JUEGO 3: Código Crítico (0.70 Segundos y Feedback Visual) ---
         let g3Spans = [];
         let g3RealTarget = -1;
         let g3FakeTargets = [];
@@ -493,59 +491,62 @@
 
             placeG3Target(); 
             
-            // Salta cada MEDIO SEGUNDO (500ms)
-            game3JumpInterval = setInterval(placeG3Target, 500);
+            // Salta exactamente cada 0.70 segundos (700ms)
+            game3JumpInterval = setInterval(placeG3Target, 700);
         }
 
         function placeG3Target() {
             if (timeLeft <= 0) return;
             
-            // 1. Limpiar el objetivo real anterior
+            // Limpiar objetivos anteriores
             if (g3RealTarget !== -1) {
                 g3Spans[g3RealTarget].innerText = junkWords[Math.floor(Math.random() * junkWords.length)];
                 g3Spans[g3RealTarget].classList.remove('target-word');
             }
-            // 2. Limpiar los objetivos falsos anteriores
             g3FakeTargets.forEach(idx => {
                 g3Spans[idx].innerText = junkWords[Math.floor(Math.random() * junkWords.length)];
                 g3Spans[idx].classList.remove('target-word');
             });
             g3FakeTargets = [];
 
-            // 3. Colocar el nuevo Objetivo REAL
+            // Colocar Objetivo REAL
             g3RealTarget = Math.floor(Math.random() * g3Spans.length);
             g3Spans[g3RealTarget].innerText = "[SOLUCIÓN]";
             g3Spans[g3RealTarget].classList.add('target-word');
 
-            // 4. Colocar distracciones verdes falsas (entre 1 y 3 falsos)
+            // Colocar distracciones verdes
             let numFakes = Math.floor(Math.random() * 3) + 1;
             for(let i = 0; i < numFakes; i++) {
                 let fakeIdx = Math.floor(Math.random() * g3Spans.length);
                 if(fakeIdx !== g3RealTarget && !g3FakeTargets.includes(fakeIdx)) {
                     g3FakeTargets.push(fakeIdx);
                     g3Spans[fakeIdx].innerText = fakeGreenWords[Math.floor(Math.random() * fakeGreenWords.length)];
-                    g3Spans[fakeIdx].classList.add('target-word'); // Se pone verde para confundir
+                    g3Spans[fakeIdx].classList.add('target-word'); 
                 }
             }
         }
 
         function handleG3Click(index) {
+            const terminal = document.getElementById('terminal-content');
+            
             if (index === g3RealTarget) {
-                // Le atinó al correcto
+                // Acierto: Suma puntos y da feedback verde (no resta tiempo)
                 score++;
                 updateHeader();
                 
+                terminal.style.backgroundColor = "#003300"; // Brillo verde de acierto
+                setTimeout(() => { terminal.style.backgroundColor = "#1e1e1e"; }, 200);
+
                 clearInterval(game3JumpInterval);
                 placeG3Target();
-                game3JumpInterval = setInterval(placeG3Target, 500); 
+                game3JumpInterval = setInterval(placeG3Target, 700); 
                 
             } else {
-                // Se equivocó (hizo clic en rojo o en un verde falso)
+                // Error (Falsa verde o palabra roja): Resta 2 segundos y da feedback rojo
                 timeLeft = Math.max(0, timeLeft - 2);
                 updateHeader();
                 
-                const terminal = document.getElementById('terminal-content');
-                terminal.style.backgroundColor = "#4a0000";
+                terminal.style.backgroundColor = "#4a0000"; // Brillo rojo de error
                 setTimeout(() => { terminal.style.backgroundColor = "#1e1e1e"; }, 200);
             }
         }
