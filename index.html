@@ -140,11 +140,10 @@
             border: 4px solid var(--tec-blue);
             border-radius: 15px;
             overflow: hidden;
-            display: none; /* Asegura que estén ocultos por defecto */
+            display: none; 
             box-sizing: border-box;
         }
 
-        /* Aseguramos los modos de display correctos al activarse */
         #game-area-1.active-game-area { display: block; }
         #game-area-2.active-game-area { display: grid; }
         #game-area-3.active-game-area { display: block; }
@@ -165,9 +164,9 @@
             to { top: 450px; }
         }
 
-        /* JUEGO 2: Memoria (Modificado a 20 cartas / 5 columnas) */
+        /* JUEGO 2: Memoria */
         .memory-grid {
-            grid-template-columns: repeat(5, 1fr); /* 5 columnas x 4 filas */
+            grid-template-columns: repeat(5, 1fr); 
             gap: 8px;
             padding: 10px;
             height: 100%;
@@ -191,7 +190,7 @@
             cursor: default;
         }
 
-        /* JUEGO 3: Código Crítico (Terminal activa) */
+        /* JUEGO 3: Código Crítico */
         .terminal-container {
             background-color: #1e1e1e;
             padding: 15px;
@@ -219,7 +218,7 @@
             background-color: rgba(255, 255, 255, 0.15);
         }
         .target-word {
-            color: #00ff00; /* Solución en verde */
+            color: #00ff00; /* Solución y Falsos Positivos en verde */
         }
 
         /* Modal Pop-up */
@@ -267,7 +266,7 @@
     <div id="screen-rules" class="screen">
         <div class="rules-box">
             <h2 id="rules-title" style="color: var(--tec-blue); font-size: 1.8rem;">Título</h2>
-            <p id="rules-text" style="font-size: 1.2rem; margin: 20px 0;">Reglas...</p>
+            <p id="rules-text" style="font-size: 1.2rem; margin: 20px 0; white-space: pre-wrap;">Reglas...</p>
             <button class="btn-primary" onclick="startGame()">INICIAR RETO</button>
             <br>
             <button class="btn-exit" style="margin-top: 15px;" onclick="abortGame()">Volver al Menú</button>
@@ -282,9 +281,7 @@
         </div>
         
         <div id="game-area-1" class="game-area"></div>
-        
         <div id="game-area-2" class="game-area memory-grid"></div>
-
         <div id="game-area-3" class="game-area">
             <div id="terminal-content" class="terminal-container"></div>
         </div>
@@ -308,38 +305,36 @@
         let game1Interval;
         let game3JumpInterval;
 
-        // Base de datos de juegos
         const gameData = {
             1: {
                 title: "El Salto al Futuro",
-                rules: "Duración: 20 segundos.\nHaz clic rápido en los círculos azules (innovaciones) que caen. Evita los rojos (resistencias). ¡Ahora caen más rápido!",
+                rules: "Duración: 20 segundos.\nHaz clic en los círculos azules. ¡Cuidado! Ahora caen MÁS rápidos y hay muchos MÁS círculos rojos (resistencias). ¡Demuestra tus reflejos!",
                 eval: (pts) => {
-                    if (pts >= 120) return { badge: "Agente de Cambio 4.0", desc: "Destreza Digital Excepcional bajo presión." };
-                    if (pts >= 60) return { badge: "Visionario Audaz", desc: "Gran capacidad para liderar el cambio." };
-                    return { badge: "Ninja de la Adaptabilidad", desc: "Habilidad para ajustarse al entorno cambiante." };
+                    if (pts >= 120) return { badge: "Agente de Cambio 4.0", desc: "Destreza Digital Excepcional bajo presión y saturación." };
+                    if (pts >= 60) return { badge: "Visionario Audaz", desc: "Gran capacidad para liderar y filtrar información rápidamente." };
+                    return { badge: "Ninja de la Adaptabilidad", desc: "Habilidad constante para ajustarse a un entorno cambiante." };
                 }
             },
             2: {
                 title: "Arquitecto de Conexiones",
                 rules: "Duración: 30 segundos.\nJuego de memoria. Encuentra los 10 pares de cartas ocultas lo más rápido posible. Haz clic para voltearlas.",
                 eval: (pares) => {
-                    if (pares >= 8) return { badge: "Catalizador de Talento", desc: "Excelente inteligencia y retención." };
-                    if (pares >= 4) return { badge: "Desarrollador de Talento", desc: "Gran enfoque y persistencia al conectar." };
+                    if (pares >= 8) return { badge: "Catalizador de Talento", desc: "Excelente inteligencia y retención de patrones." };
+                    if (pares >= 4) return { badge: "Desarrollador de Talento", desc: "Gran enfoque y persistencia al conectar equipos." };
                     return { badge: "Embajador de Servicio", desc: "Mucha orientación y paciencia al detalle." };
                 }
             },
             3: {
                 title: "Misión: Código Crítico",
-                rules: "Duración: 20 segundos.\nEscanea la terminal. Atrapa la palabra '[SOLUCIÓN]' que cambiará de lugar CADA SEGUNDO. Si tocas el código rojo, pierdes tiempo.",
+                rules: "Duración: 20 segundos.\nEscanea la terminal y haz clic SÓLO en '[SOLUCIÓN]'. \nCambiará cada MEDIO SEGUNDO y aparecerán distracciones verdes casi idénticas. ¡Lee rápido!",
                 eval: (aciertos) => {
-                    if (aciertos >= 8) return { badge: "Detective de Soluciones", desc: "Resolución impecable y ágil. Encuentras lo oculto al instante." };
-                    if (aciertos >= 4) return { badge: "Arquitecto de Soluciones", desc: "Pensamiento crítico asombroso bajo presión visual." };
-                    return { badge: "Generador de Resultados", desc: "Fuerte orientación a lograr objetivos superando obstáculos." };
+                    if (aciertos >= 8) return { badge: "Detective de Soluciones", desc: "Resolución impecable. Ignoras el ruido y encuentras la verdad oculta." };
+                    if (aciertos >= 4) return { badge: "Arquitecto de Soluciones", desc: "Pensamiento crítico asombroso bajo extrema presión visual." };
+                    return { badge: "Generador de Resultados", desc: "Fuerte orientación a lograr objetivos superando obstáculos constantes." };
                 }
             }
         };
 
-        // Navegación limpia y segura
         function switchScreen(screenId) {
             document.querySelectorAll('.screen').forEach(el => el.classList.remove('active-screen'));
             document.getElementById(screenId).classList.add('active-screen');
@@ -368,31 +363,24 @@
             abortGame();
         }
 
-        // --- Inicio del Juego Común ---
         function startGame() {
             clearAllIntervals();
             score = 0;
             
-            // Asignar tiempos según el juego para mayor dificultad
             if (currentGame === 1) timeLeft = 20;
-            if (currentGame === 2) timeLeft = 30; // 30s porque son 20 cartas
+            if (currentGame === 2) timeLeft = 30; 
             if (currentGame === 3) timeLeft = 20;
 
             updateHeader();
             switchScreen('screen-game');
             
-            // Ocultar todas las áreas de juego y limpiar contenidos previos si existen
             document.querySelectorAll('.game-area').forEach(el => el.classList.remove('active-game-area'));
-            
-            const currentArea = document.getElementById(`game-area-${currentGame}`);
-            currentArea.classList.add('active-game-area');
+            document.getElementById(`game-area-${currentGame}`).classList.add('active-game-area');
 
-            // Iniciar lógica específica
             if (currentGame === 1) initGame1();
             if (currentGame === 2) initGame2();
             if (currentGame === 3) initGame3();
 
-            // Temporizador global
             timerInterval = setInterval(() => {
                 timeLeft--;
                 updateHeader();
@@ -406,29 +394,31 @@
             document.getElementById('score-display').innerText = displayScore;
         }
 
-        // --- LÓGICA JUEGO 1: Objetos cayendo (Más rápidos) ---
+        // --- LÓGICA JUEGO 1: Mayor saturación y velocidad ---
         function initGame1() {
             const area = document.getElementById('game-area-1');
             area.innerHTML = '';
             
-            // Aparecen cada 450ms en lugar de 600ms para más agilidad
+            // Aparecen muy rápido (cada 350ms)
             game1Interval = setInterval(() => {
                 if (timeLeft > 0) spawnItem(area);
-            }, 450);
+            }, 350);
         }
 
         function spawnItem(area) {
             const item = document.createElement('div');
-            const isGood = Math.random() > 0.35; // 65% buenos, 35% malos
+            // 60% probabilidad de ser ROJO (malo) para confundir más
+            const isGood = Math.random() > 0.60; 
+            
             item.classList.add('falling-item');
             item.classList.add(isGood ? 'good-item' : 'bad-item');
             item.style.left = Math.floor(Math.random() * (area.clientWidth - 40)) + 'px';
             
-            // Caen más rápido: de 0.8 a 2.0 segundos de duración
-            item.style.animationDuration = `${Math.random() * 1.2 + 0.8}s`;
+            // Velocidad mucho más rápida: entre 0.6s y 1.4s de duración de caída
+            item.style.animationDuration = `${Math.random() * 0.8 + 0.6}s`;
             
             item.onclick = () => {
-                score += isGood ? 20 : -15; // Más penalización si se equivoca
+                score += isGood ? 20 : -15; 
                 updateHeader();
                 item.remove();
             };
@@ -436,14 +426,13 @@
             area.appendChild(item);
         }
 
-        // --- LÓGICA JUEGO 2: Memoria (20 Tarjetas / 10 Pares) ---
+        // --- LÓGICA JUEGO 2: Memoria ---
         let flippedCards = [];
         function initGame2() {
             const area = document.getElementById('game-area-2');
             area.innerHTML = '';
             flippedCards = [];
             
-            // 10 Emojis = 20 Cartas
             const emojis = ['💡', '🤝', '🚀', '🎯', '📈', '🧠', '⚙️', '🔍', '💻', '🌟'];
             let deck = [...emojis, ...emojis].sort(() => 0.5 - Math.random());
             
@@ -470,7 +459,7 @@
             if (card1.dataset.symbol === card2.dataset.symbol) {
                 score++; 
                 updateHeader();
-                if (score === 10) endGame(); // 10 pares es ganar automáticamente
+                if (score === 10) endGame(); 
             } else {
                 card1.classList.remove('flipped');
                 card2.classList.remove('flipped');
@@ -478,16 +467,19 @@
             flippedCards = [];
         }
 
-        // --- LÓGICA JUEGO 3: Código Crítico (Salto cada 1 segundo) ---
+        // --- LÓGICA JUEGO 3: Código Crítico (Distracción y Medio Segundo) ---
         let g3Spans = [];
-        let currentTargetIndex = -1;
+        let g3RealTarget = -1;
+        let g3FakeTargets = [];
         const junkWords = ["[ERROR]", "NULL_PTR", "404_NOT_FOUND", "SYS_FAIL", "BAD_GATEWAY", "DENIED", "VOID", "EXCEPTION", "TIMEOUT"];
+        const fakeGreenWords = ["[S0LUCIÓN]", "[SOLUCION]", "[SOLUC1ÓN]", "[S0LUC1ON]", "[ERROR_OK]"];
 
         function initGame3() {
             const terminal = document.getElementById('terminal-content');
             terminal.innerHTML = '';
             g3Spans = [];
-            currentTargetIndex = -1;
+            g3RealTarget = -1;
+            g3FakeTargets = [];
 
             const totalWords = 45; 
             for (let i = 0; i < totalWords; i++) {
@@ -496,53 +488,68 @@
                 wordSpan.innerText = junkWords[Math.floor(Math.random() * junkWords.length)];
                 wordSpan.onclick = () => handleG3Click(i);
                 terminal.appendChild(wordSpan);
-                g3Spans.push(wordSpan); // Guardamos la referencia
+                g3Spans.push(wordSpan);
             }
 
-            placeG3Target(); // Colocar el primer objetivo
+            placeG3Target(); 
             
-            // Hacer que la palabra salte automáticamente cada 1 segundo
-            game3JumpInterval = setInterval(placeG3Target, 1000);
+            // Salta cada MEDIO SEGUNDO (500ms)
+            game3JumpInterval = setInterval(placeG3Target, 500);
         }
 
         function placeG3Target() {
             if (timeLeft <= 0) return;
             
-            // Si ya hay un target, lo regresamos a ser palabra basura roja
-            if (currentTargetIndex !== -1) {
-                g3Spans[currentTargetIndex].innerText = junkWords[Math.floor(Math.random() * junkWords.length)];
-                g3Spans[currentTargetIndex].classList.remove('target-word');
+            // 1. Limpiar el objetivo real anterior
+            if (g3RealTarget !== -1) {
+                g3Spans[g3RealTarget].innerText = junkWords[Math.floor(Math.random() * junkWords.length)];
+                g3Spans[g3RealTarget].classList.remove('target-word');
             }
+            // 2. Limpiar los objetivos falsos anteriores
+            g3FakeTargets.forEach(idx => {
+                g3Spans[idx].innerText = junkWords[Math.floor(Math.random() * junkWords.length)];
+                g3Spans[idx].classList.remove('target-word');
+            });
+            g3FakeTargets = [];
 
-            // Elegir nueva posición aleatoria
-            currentTargetIndex = Math.floor(Math.random() * g3Spans.length);
-            g3Spans[currentTargetIndex].innerText = "[SOLUCIÓN]";
-            g3Spans[currentTargetIndex].classList.add('target-word');
+            // 3. Colocar el nuevo Objetivo REAL
+            g3RealTarget = Math.floor(Math.random() * g3Spans.length);
+            g3Spans[g3RealTarget].innerText = "[SOLUCIÓN]";
+            g3Spans[g3RealTarget].classList.add('target-word');
+
+            // 4. Colocar distracciones verdes falsas (entre 1 y 3 falsos)
+            let numFakes = Math.floor(Math.random() * 3) + 1;
+            for(let i = 0; i < numFakes; i++) {
+                let fakeIdx = Math.floor(Math.random() * g3Spans.length);
+                if(fakeIdx !== g3RealTarget && !g3FakeTargets.includes(fakeIdx)) {
+                    g3FakeTargets.push(fakeIdx);
+                    g3Spans[fakeIdx].innerText = fakeGreenWords[Math.floor(Math.random() * fakeGreenWords.length)];
+                    g3Spans[fakeIdx].classList.add('target-word'); // Se pone verde para confundir
+                }
+            }
         }
 
         function handleG3Click(index) {
-            if (index === currentTargetIndex) {
+            if (index === g3RealTarget) {
+                // Le atinó al correcto
                 score++;
                 updateHeader();
                 
-                // Limpiar el timer y forzar un salto inmediato a otra posición
                 clearInterval(game3JumpInterval);
                 placeG3Target();
-                game3JumpInterval = setInterval(placeG3Target, 1000); 
+                game3JumpInterval = setInterval(placeG3Target, 500); 
                 
             } else {
-                // Penalización de tiempo
+                // Se equivocó (hizo clic en rojo o en un verde falso)
                 timeLeft = Math.max(0, timeLeft - 2);
                 updateHeader();
                 
-                // Efecto visual de error
                 const terminal = document.getElementById('terminal-content');
                 terminal.style.backgroundColor = "#4a0000";
                 setTimeout(() => { terminal.style.backgroundColor = "#1e1e1e"; }, 200);
             }
         }
 
-        // --- Fin del Juego ---
         function endGame() {
             clearAllIntervals();
             const result = gameData[currentGame].eval(score);
