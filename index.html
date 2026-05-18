@@ -507,7 +507,8 @@
         let g3RealTarget = -1;
         let g3FakeTargets = [];
         const junkWords = ["[ERROR]", "NULL_PTR", "404_NOT_FOUND", "SYS_FAIL", "BAD_GATEWAY", "DENIED", "VOID", "EXCEPTION", "TIMEOUT"];
-        const fakeGreenWords = ["[S0LUCIÓN]", "[SOLUCION]", "[SOLUC1ÓN]", "[S0LUC1ON]", "[ERROR_OK]"];
+        // Se removió completamente '[SOLUCION]' sin acento. Las alternativas ahora confunden visualmente con otras palabras/caracteres.
+        const fakeGreenWords = ["[S0LUCIÓN]", "[SOLUC1ÓN]", "[S0LUC1ON]", "[ACCESO_OK]", "[VERIFICADO]"];
 
         function initGame3() {
             const terminal = document.getElementById('terminal-content');
@@ -531,7 +532,7 @@
             }
 
             placeG3Target(); 
-            // VELOCIDAD RESTAURADA: 700ms (0.70 segundos)
+            // VELOCIDAD CONFIGURADA: 700ms (0.70 segundos)
             game3JumpInterval = setInterval(placeG3Target, 700);
         }
 
@@ -575,10 +576,9 @@
 
                 clearInterval(game3JumpInterval);
                 placeG3Target();
-                // Reiniciar el intervalo a la misma velocidad estable de 700ms
                 game3JumpInterval = setInterval(placeG3Target, 700); 
             } else {
-                // PENALIZACIÓN: Se queda la resta de medio punto
+                // Penalización por tocar cualquier otra palabra (incluyendo los verdes falsos)
                 score -= 0.5;
                 updateHeader();
 
